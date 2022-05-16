@@ -55,6 +55,7 @@ def weighted_cross_entropy(y_true, y_pred):
 if __name__=="__main__":
     # args = sys.argv
     # row_index = int(args[1])
+    max_res = 300
     train_dir = 'features/processed/train-val/'
     test_dir = 'features/processed/test/'
     model_save_dir = 'logs/array/'
@@ -75,8 +76,8 @@ if __name__=="__main__":
                  'learning_rate': 0.005,
                  'dropout': False}
 
-    training_generator = DataGenerator(train_dir, batchSize=hyperparams['batch_size'])
-    validation_generator = DataGenerator(test_dir, batchSize=hyperparams['batch_size'])
+    training_generator = DataGenerator(train_dir, batchSize=hyperparams['batch_size'], max_res=max_res)
+    validation_generator = DataGenerator(test_dir, batchSize=hyperparams['batch_size'], max_res=max_res)
     METRICS = [
         keras.metrics.TruePositives(name='tp'),
         keras.metrics.FalsePositives(name='fp'),
@@ -89,7 +90,7 @@ if __name__=="__main__":
         keras.metrics.AUC(name='prc', curve='PR'),  # precision-recall curve
     ]
 
-    model = network_builder(hyperparams)
+    model = network_builder(hyperparams,  maxlen=max_res, n_features=4080)
     model.compile(loss=weighted_cross_entropy,
                   metrics=METRICS,
                   optimizer=keras.optimizers.Adam(learning_rate=hyperparams['learning_rate'], clipnorm=1.0))
