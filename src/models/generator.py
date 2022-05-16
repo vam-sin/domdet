@@ -5,7 +5,7 @@ train_val_keys = os.listdir('features/processed/train-val/')
 test_keys = os.listdir('features/processed/test_final/')
 
 random.seed(4)
-train_val_keys = random.shuffle(train_val_keys, )
+train_val_keys = random.shuffle(train_val_keys)
 train_keys = []
 val_keys = []
 
