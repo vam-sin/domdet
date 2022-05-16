@@ -46,7 +46,7 @@ def network_builder(hyperp, maxlen=1000, n_features=384):
 
 
 def weighted_cross_entropy(y_true, y_pred):
-    weighting = 5
+    weighting = 0.2
     loss_pos = weighting * y_true * tf.math.log(y_pred)
     loss_neg = (1 - y_true) * tf.math.log(1 - y_pred)
     loss = -1 * (loss_pos + loss_neg)
@@ -73,7 +73,7 @@ if __name__=="__main__":
                  'key_dim': 8,
                  'hidden_nodes': 20,
                  'hidden_layers': 1,
-                 'learning_rate': 0.005,
+                 'learning_rate': 0.00001,
                  'dropout': False}
 
     training_generator = DataGenerator(train_dir, batchSize=hyperparams['batch_size'], max_res=max_res)
