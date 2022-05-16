@@ -20,7 +20,7 @@ class DataGenerator(keras.utils.Sequence):
         start_file_num = index*self.batchSize
         end_file_num = (index+1)*self.batchSize
         batch = [self.load_npz(self.dir + self.file_list[i]) for i in range(start_file_num, end_file_num)]
-        return [chain[0] for chain in batch], [chain[1] for chain in batch]
+        return np.stack([chain[0] for chain in batch]), np.stack([chain[1] for chain in batch])
 
     def load_npz(self, npz_path):
         arr = np.load(npz_path, allow_pickle=True)['arr_0']

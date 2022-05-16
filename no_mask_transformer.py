@@ -68,7 +68,7 @@ if __name__=="__main__":
     hyperparams = {'num_heads': 1,
                  'value_dim': 16,
                  'n_positional': 8,
-                 'batch_size': 2,
+                 'batch_size': 3,
                  'key_dim': 8,
                  'hidden_nodes': 20,
                  'hidden_layers': 1,
@@ -111,7 +111,7 @@ if __name__=="__main__":
         restore_best_weights=False,
     )
 
-    history = model.fit(training_generator, epochs=1000, batch_size=2,
+    history = model.fit(training_generator, epochs=1000, batch_size=hyperparams['batch_size'],
                         # sample_weight=train_sample_weights,
                         callbacks=[checkpoint_callback, es])
     with open(os.path.join(filepath, 'history.pickle'), 'wb') as file_handle:
