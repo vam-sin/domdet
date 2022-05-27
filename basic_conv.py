@@ -82,10 +82,14 @@ if __name__=="__main__":
         restore_best_weights=False,
     )
 
-    history = model.fit(training_generator, epochs=1000, batch_size=hp['batch_size'],
+    history = model.fit(training_generator, validation_data=validation_generator, epochs=1, batch_size=hp['batch_size'],
                         # sample_weight=train_sample_weights,
                         callbacks=[checkpoint_callback, es])
     with open(os.path.join(filepath, 'history.pickle'), 'wb') as file_handle:
         pickle.dump(history.history, file_handle)
 
 
+'''
+2352/2352 [==============================] - 1629s 692ms/step - loss: 154.7525 - tp: 1271286.0000 - fp: 62894.0000 - tn: 782530.0000 - fn: 90.0000 - accuracy: 0.9702 - precision: 0.9529 - recall: 0.9999 - auc: 0.9698 - prc: 0.9621
+753/2352 [========>.....................] - ETA: 20:38 - loss: 151.2803 - tp: 411491.0000 - fp: 18285.0000 - tn: 247904.0000 - fn: 20.0000 - accuracy: 0.9730 - precision: 0.9575 - recall: 1.0000 - auc: 0.9696 - prc: 0.9623
+'''
