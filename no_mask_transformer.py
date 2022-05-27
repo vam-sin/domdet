@@ -11,14 +11,26 @@ from sklearn.metrics import roc_auc_score
 from ppi_transformer import PositionEmbedding
 from data_generator import DataGenerator
 
+METRICS = [
+    keras.metrics.TruePositives(name='tp'),
+    keras.metrics.FalsePositives(name='fp'),
+    keras.metrics.TrueNegatives(name='tn'),
+    keras.metrics.FalseNegatives(name='fn'),
+    keras.metrics.BinaryAccuracy(name='accuracy'),
+    keras.metrics.Precision(name='precision'),
+    keras.metrics.Recall(name='recall'),
+    keras.metrics.AUC(name='auc'),
+    keras.metrics.AUC(name='prc', curve='PR'),  # precision-recall curve
+]
+
 class TransformerBlock(layers.Layer):
     def __init__(self, key_dim, value_dim, num_heads, output_shape, rate=0.1, maxlen=1000):
         super(TransformerBlock, self).__init__()
         self.att = layers.MultiHeadAttention(num_heads=num_heads, key_dim=key_dim, value_dim=value_dim,
                                              output_shape=output_shape, name='multiheadattn')
         self.layernorm1 = layers.LayerNormalization(epsilon=1e-6)
-        self.dropout1 = layers.Dropout(rate)
-        self.masking_layer = layers.Embedding(input_dim=maxlen, output_dim=maxlen, mask_zero=True)
+
+
 
 
     def call(self, inputs, training):
@@ -78,17 +90,6 @@ if __name__=="__main__":
 
     training_generator = DataGenerator(train_dir, batchSize=hyperparams['batch_size'], max_res=max_res)
     validation_generator = DataGenerator(test_dir, batchSize=hyperparams['batch_size'], max_res=max_res)
-    METRICS = [
-        keras.metrics.TruePositives(name='tp'),
-        keras.metrics.FalsePositives(name='fp'),
-        keras.metrics.TrueNegatives(name='tn'),
-        keras.metrics.FalseNegatives(name='fn'),
-        keras.metrics.BinaryAccuracy(name='accuracy'),
-        keras.metrics.Precision(name='precision'),
-        keras.metrics.Recall(name='recall'),
-        keras.metrics.AUC(name='auc'),
-        keras.metrics.AUC(name='prc', curve='PR'),  # precision-recall curve
-    ]
 
     model = network_builder(hyperparams,  maxlen=max_res, n_features=4080)
     model.compile(loss=weighted_cross_entropy,

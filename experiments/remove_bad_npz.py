@@ -11,7 +11,8 @@ for dir in [train_dir, test_dir]:
     for f in os.listdir(dir):
         try:
             load_npz(dir + f)
-            print(i)
+            # print(i)
         except:
+            print('failed:', f)
             os.remove(dir + f)
         i += 1
