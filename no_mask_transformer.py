@@ -12,13 +12,13 @@ from ppi_transformer import PositionEmbedding
 from data_generator import DataGenerator
 
 METRICS = [
-    # keras.metrics.TruePositives(name='tp'),
+    keras.metrics.TruePositives(name='tp'),
     keras.metrics.FalsePositives(name='fp'),
     keras.metrics.TrueNegatives(name='tn'),
-    # keras.metrics.FalseNegatives(name='fn'),
+    keras.metrics.FalseNegatives(name='fn'),
     # keras.metrics.BinaryAccuracy(name='accuracy'),
-    keras.metrics.Precision(name='precision'),
-    keras.metrics.Recall(name='recall'),
+    keras.metrics.Precision(name='prec'),
+    keras.metrics.Recall(name='rec'),
     keras.metrics.AUC(name='auc'),
     keras.metrics.AUC(name='prc', curve='PR'),  # precision-recall curve
 ]

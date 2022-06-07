@@ -2,3 +2,5 @@
 features/
 *.npx
 __pycache__/
+wandb/
+conv_logs/

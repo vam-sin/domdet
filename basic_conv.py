@@ -6,6 +6,49 @@ from no_mask_transformer import METRICS, weighted_cross_entropy
 from data_generator import DataGenerator
 
 
+def masked_weighted_cross_entropy(y_true, y_pred):
+    weighting  = 0.2
+    tf.print(y_true.shape)
+    y, masks = tf.split(y_true, 2, axis=1)
+    tf.print(y.shape)
+    loss_pos = weighting * y * tf.math.log(y_pred)
+    loss_neg = (1 - y) * tf.math.log(1 - y_pred)
+    loss = -1 * (loss_pos + loss_neg) * masks
+    return tf.reduce_sum(loss)
+
+class MaskedConvNet(tf.keras.Model):
+    def __init__(self, model_settings, **kwargs):
+        super(MaskedConvNet, self).__init__(**kwargs)
+        self.model_settings = model_settings
+        self.model = build_convnet(model_settings, n_features=4080)
+        self.total_loss_tracker = tf.keras.metrics.Mean(name="total_loss")
+
+    @property
+    def metrics(self):
+        return [
+            self.total_loss_tracker
+            # self.reconstruction_loss_tracker,
+            # self.kl_loss_tracker,
+        ]
+
+
+    def train_step(self, data):
+        x, y_tup = data
+        y, masks = tf.unstack(y_tup, axis=1)
+        y_pred = self.model(x)
+        with tf.GradientTape() as tape:
+            loss = weighted_cross_entropy(y, y_pred)
+            grads = tape.gradient(loss, self.trainable_weights)
+            self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
+            self.total_loss_tracker.update_state(loss)
+            # self.reconstruction_loss_tracker.update_state(reconstruction_loss)
+            # self.kl_loss_tracker.update_state(kl_loss)
+        return {
+            "loss": self.total_loss_tracker.result(),
+            # "reconstruction_loss": self.reconstruction_loss_tracker.result(),
+            # "kl_loss": self.kl_loss_tracker.result(),
+        }
+
 def build_convnet(hp, n_features):
     inputs = keras.layers.Input(shape=(hp['max_res'], n_features))
     conv1 = keras.layers.Conv1D(hp['filters'],
@@ -60,9 +103,13 @@ if __name__=="__main__":
                     }
     training_generator = DataGenerator(train_dir, batchSize=hp['batch_size'], max_res=hp['max_res'])
     validation_generator = DataGenerator(test_dir, batchSize=hp['batch_size'], max_res=hp['max_res'])
+    model_conv = MaskedConvNet(hp)
+    model_conv.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=hp['learning_rate'], clipnorm=1.0))
+    history = model_conv.fit(training_generator, epochs=1)
+
     model = build_convnet(hp, n_features=4080)
     model.summary()
-    model.compile(loss=weighted_cross_entropy,
+    model.compile(loss=masked_weighted_cross_entropy,
                   metrics=METRICS,
                   optimizer=keras.optimizers.Adam(learning_rate=hp['learning_rate'], clipnorm=1.0))
     os.makedirs(model_save_dir, exist_ok=True)
