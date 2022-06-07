@@ -1,5 +1,16 @@
 import pandas as pd
 
+conv_hyperparams = dict(
+            batch_size= [16],
+            k_size= [5, 7, 11],
+            filters=[32, 64, 128],
+            dense_layers= [1,2,3,4],
+            learning_rate= [1e-5, 1e-4, 1e-3, 1e-6],
+            max_res=[300],
+            n_features= [4080],
+            conv_layers= [2,3,5],
+            epochs= [200],
+)
 
 hyperparams = dict(
     out_1 = [10, 16, 32],
@@ -55,7 +66,7 @@ def make_param_df(hyperparams):
     return df_rows
 
 
-df_rows = make_param_df(kalasanty_hyperparams)
+df_rows = make_param_df(conv_hyperparams)
 df = pd.DataFrame(df_rows)
 df = df.sample(frac=1.0)
-df.to_csv('../kal_hyperparameters.csv', index=False)
+df.to_csv('conv_hyperparameters.csv', index=False)

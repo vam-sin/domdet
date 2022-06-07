@@ -4,3 +4,4 @@ features/
 __pycache__/
 wandb/
 conv_logs/
+*.csv

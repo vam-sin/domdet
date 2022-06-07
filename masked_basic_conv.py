@@ -1,5 +1,8 @@
 import os
 import pickle
+import sys
+import re
+import pandas as pd
 from sklearn.metrics import roc_auc_score, auc, precision_recall_curve, recall_score, precision_score
 import tensorflow as tf
 from tensorflow import keras
@@ -11,6 +14,27 @@ from wandb.keras import WandbCallback
 from no_mask_transformer import METRICS, weighted_cross_entropy
 from data_generator import DataGenerator
 
+# hp = {'batch_size': 3,
+#       'k_size': 5,
+#       'filters': 32,
+#       'dense_layers': 1,
+#       'learning_rate': 0.00001,
+#       'max_res': 300,
+#       'n_features': 4080,
+#       'conv_layers': 3,
+#       'epochs': 100,
+#       }
+
+
+def get_hyperparameters(path='conv_hyperparameters.csv'):
+    # load hyper params from csv select one set of HPs to evaluate
+    # Designed for array job grid-search over HPs
+    row_index = int(sys.argv[1]) -1
+    hyper_df = pd.read_csv(path)
+    hp = hyper_df.loc[row_index].to_dict()
+    hp = {k: v for k, v in hp.items() if not re.search('[A-Za-z]*_e\d+', k)} # remove the rows of the data frame that contain performance metrics from previous runs
+    print('loaded csv hyperparams')
+    return hp, row_index
 
 def select_f1_threshold(precision, recall, thresholds):
     f1_scores = 2 * recall * precision / (recall + precision)
@@ -134,35 +158,38 @@ if __name__=="__main__":
     train_dir = 'features/processed/train-val/'
     test_dir = 'features/processed/test/'
     model_save_dir = 'conv_logs/'
-    hp = {  'batch_size': 3,
-            'k_size': 5,
-            'filters':32,
-            'dense_layers': 1,
-            'learning_rate': 0.00001,
-            'max_res':300,
-            'n_features': 4080,
-            'conv_layers': 3,
-            'epochs': 100,
-                    }
+    hp, row_index = get_hyperparameters(path='conv_hyperparameters.csv')
+    # batch_size = [16],
+    # k_size = [5, 7, 11],
+    # filters = [32, 64, 128],
+    # dense_layers = [1, 2, 3, 4],
+    # learning_rate = [1e-5, 1e-4, 1e-3, 1e-6],
+    # max_res = [300],
+    # n_features = [4080],
+    # conv_layers = [2, 3, 5],
+    epochs = [200],
+    for k in ['max_res', 'epochs', 'filters', 'n_features', 'k_size', 'conv_layers', 'dense_layers', 'batch_size']:
+        hp[k] = int(hp[k])
+
     wandb.config.update(hp)
     wandb.config.model = 'basic convnet'
     input = keras.layers.Input(shape=(hp['max_res'], hp['n_features']))
     input_mask = keras.layers.Input(shape=(hp['max_res'], hp['n_features']))
     conv1 = keras.layers.Conv1D(hp['filters'],
-                                kernel_size=hp['k_size'],
+                                kernel_size=int(hp['k_size']),
                                 data_format='channels_last',
                                 strides=1,
                                 padding="same",
                                 activation='ELU',
                                 input_shape=(hp['max_res'], hp['n_features']),
                                 kernel_regularizer=None)
-    conv2 = keras.layers.Conv1D(hp['filters'],
-                                kernel_size=hp['k_size'],
+    conv2 = keras.layers.Conv1D(int(hp['filters']),
+                                kernel_size=int(hp['k_size']),
                                 data_format='channels_last',
                                 strides=1,
                                 padding="same",
                                 activation='ELU',
-                                input_shape=(hp['max_res'], hp['filters']),
+                                input_shape=(int(hp['max_res']), int(hp['filters'])),
                                 kernel_regularizer=None)
     dense = keras.layers.Dense(hp['filters'], activation='ELU')
     x = conv1(input)
@@ -175,8 +202,8 @@ if __name__=="__main__":
     model = MaskedConvNet(inputs=input, outputs=output)
     model.compile(loss=weighted_cross_entropy, optimizer=keras.optimizers.Adam(learning_rate=hp['learning_rate'], clipnorm=1.0))
     training_generator = DataGenerator(train_dir, batchSize=hp['batch_size'], max_res=hp['max_res'])
-    validation_generator = DataGenerator(test_dir, batchSize=hp['batch_size']*2, max_res=hp['max_res'])
-    history = model.fit(training_generator, epochs=1, callbacks=[WandbCallback(monitor='loss'), EvaluateOnTestCallback(validation_generator)])
+    validation_generator = DataGenerator(test_dir, batchSize=hp['batch_size'], max_res=hp['max_res'])
+    history = model.fit(training_generator, epochs=hp['epochs'], callbacks=[WandbCallback(monitor='loss'), EvaluateOnTestCallback(validation_generator)])
     scores = model.evaluate_on_test(validation_generator)
     for k, v in scores.items():
         wandb.log({f'test combined {k}': v})
