@@ -35,6 +35,13 @@ kalasanty_hyperparams = dict(
     k_size = [3, 7, 11],
 )
 
+unet_hp = dict(
+    lr=[1e-6],
+    weighting=[5, 50],
+    batch = [4],
+    k_size = [3, 7, 11],
+)
+
 def calc_n_rows(hp):
     combinations = 1
     for n in [len(v) for v in hp.values()]:
@@ -66,7 +73,7 @@ def make_param_df(hyperparams):
     return df_rows
 
 
-df_rows = make_param_df(conv_hyperparams)
+df_rows = make_param_df(unet_hp)
 df = pd.DataFrame(df_rows)
 df = df.sample(frac=1.0)
-df.to_csv('conv_hyperparameters.csv', index=False)
+df.to_csv('unet_hp.csv', index=False)

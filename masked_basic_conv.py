@@ -59,10 +59,7 @@ class MaskedConvNet(tf.keras.Model):
         self.recall_tracker = tf.keras.metrics.Mean(name="rec")
 
     def train_step(self, data):
-        # Unpack the data. Its structure depends on your model and
-        # on what you pass to `fit()`.
         (x, mask), y = data
-        # tf.print(mask)
         with tf.GradientTape() as tape:
             y_pred = self(x, training=True)  # Forward pass
             loss = self.masked_weighted_cross_entropy(y, y_pred, mask)
@@ -102,8 +99,13 @@ class MaskedConvNet(tf.keras.Model):
         recall_keras = true_positives / (possible_positives + K.epsilon())
         return recall_keras
 
-
     def evaluate_on_test(self, test_generator):
+        """
+        Average of multiple batches of AUC ROC score are not the same as
+        as the AUC ROC score of all the data computed at once
+        but computing on the entire test set at once is expensive
+        this function breaks the test set into batches of batches and takes the average of those
+        """
         batches_of_batches = 10
         normalizing_weight = 0
         running_auc_roc = 0
@@ -143,7 +145,6 @@ class MaskedConvNet(tf.keras.Model):
             y = y[mask.astype(bool)]
             running_pred = np.append(running_pred, y_pred)
             running_y = np.append(running_y, y)
-
 
         scores = {
             'roc_auc': running_auc_roc / normalizing_weight,
