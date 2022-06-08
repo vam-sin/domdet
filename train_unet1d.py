@@ -18,7 +18,14 @@ def get_hyperparameters(path='unet_hp.csv'):
         if v % 1 == 0:
             hp[k] = int(v)
     print('loaded csv hyperparams')
+    hp = make_unet_channels(hp)
     return hp, row_index
+
+def make_unet_channels(hp):
+    depth = 5
+    for i in range(depth):
+        hp['c' + str(depth-i)] = int(hp['max_channels'] / 2**i)
+    return hp
 
 class DiceLoss:
     def __init__(self, denominator_exponent=1, smooth=0.01):

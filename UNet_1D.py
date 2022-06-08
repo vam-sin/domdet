@@ -12,33 +12,33 @@ class UNET(nn.Module):
         self.output_channels = output_channels
         self.nn_layers = nn.ModuleList()
 
-        self.conv1 = nn.Conv1d(in_channels=input_channels, out_channels=32, **self.params)
-        self.conv1b = nn.Conv1d(in_channels=32, out_channels=32, **self.params)
+        self.conv1 = nn.Conv1d(in_channels=input_channels, out_channels=hp['c1'], **self.params)
+        self.conv1b = nn.Conv1d(in_channels=hp['c1'], out_channels=hp['c1'], **self.params)
         self.pool1 = nn.MaxPool1d(kernel_size=4)
 
-        self.conv2 = nn.Conv1d(in_channels=32, out_channels=64, **self.params)
-        self.conv2b = nn.Conv1d(in_channels=64, out_channels=64, **self.params)
+        self.conv2 = nn.Conv1d(in_channels=hp['c1'], out_channels=hp['c2'], **self.params)
+        self.conv2b = nn.Conv1d(in_channels=hp['c2'], out_channels=hp['c2'], **self.params)
         self.pool2 = nn.MaxPool1d(kernel_size=4)
 
-        self.conv3 = nn.Conv1d(in_channels=64, out_channels=128, **self.params)
-        self.conv3b = nn.Conv1d(in_channels=128, out_channels=128, **self.params)
+        self.conv3 = nn.Conv1d(in_channels=hp['c2'], out_channels=hp['c3'], **self.params)
+        self.conv3b = nn.Conv1d(in_channels=hp['c3'], out_channels=hp['c3'], **self.params)
         self.pool3 = nn.MaxPool1d(kernel_size=5)
 
-        self.conv4 = nn.Conv1d(in_channels=128, out_channels=256, **self.params)
-        self.conv4b = nn.Conv1d(in_channels=256, out_channels=256, **self.params)
+        self.conv4 = nn.Conv1d(in_channels=hp['c3'], out_channels=hp['c4'], **self.params)
+        self.conv4b = nn.Conv1d(in_channels=hp['c4'], out_channels=hp['c4'], **self.params)
         self.pool4 = nn.MaxPool1d(kernel_size=6)
 
-        self.conv5 = nn.Conv1d(in_channels=256, out_channels=512, **self.params)
-        self.conv5b = nn.Conv1d(in_channels=512, out_channels=512, **self.params)
-        self.conv6 = nn.Conv1d(in_channels=768, out_channels=256, **self.params)
-        self.conv6b = nn.Conv1d(in_channels=256, out_channels=256, **self.params)
-        self.conv7 = nn.Conv1d(in_channels=384, out_channels=128, **self.params)
-        self.conv7b = nn.Conv1d(in_channels=128, out_channels=128, **self.params)
-        self.conv8 = nn.Conv1d(in_channels=192, out_channels=64, **self.params)
-        self.conv8b = nn.Conv1d(in_channels=64, out_channels=64, **self.params)
-        self.conv9 = nn.Conv1d(in_channels=96, out_channels=32, **self.params)
-        self.conv9b = nn.Conv1d(in_channels=32, out_channels=32, **self.params)
-        self.outputs = nn.Conv1d(in_channels=32, out_channels=self.output_channels, kernel_size=1)
+        self.conv5 = nn.Conv1d(in_channels=hp['c4'], out_channels=hp['c5'], **self.params)
+        self.conv5b = nn.Conv1d(in_channels=hp['c5'], out_channels=hp['c5'], **self.params)
+        self.conv6 = nn.Conv1d(in_channels=hp['c5'] + hp['c4'], out_channels=hp['c4'], **self.params)
+        self.conv6b = nn.Conv1d(in_channels=hp['c4'], out_channels=hp['c4'], **self.params)
+        self.conv7 = nn.Conv1d(in_channels=hp['c4']+hp['c3'], out_channels=hp['c3'], **self.params)
+        self.conv7b = nn.Conv1d(in_channels=hp['c3'], out_channels=hp['c3'], **self.params)
+        self.conv8 = nn.Conv1d(in_channels=hp['c3']+hp['c2'], out_channels=hp['c2'], **self.params)
+        self.conv8b = nn.Conv1d(in_channels=hp['c2'], out_channels=hp['c2'], **self.params)
+        self.conv9 = nn.Conv1d(in_channels=hp['c2']+hp['c1'], out_channels=hp['c1'], **self.params)
+        self.conv9b = nn.Conv1d(in_channels=hp['c1'], out_channels=hp['c1'], **self.params)
+        self.outputs = nn.Conv1d(in_channels=hp['c1'], out_channels=self.output_channels, kernel_size=1)
 
     def forward(self,x):
         conv1 = relu(self.conv1(x))
@@ -78,3 +78,4 @@ class UNET(nn.Module):
 
         outputs = sigmoid(self.outputs(conv9))
         return outputs.squeeze()
+    

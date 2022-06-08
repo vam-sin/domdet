@@ -10,6 +10,7 @@ conv_hyperparams = dict(
             n_features= [4080],
             conv_layers= [2,3,5],
             epochs= [200],
+
 )
 
 hyperparams = dict(
@@ -40,6 +41,7 @@ unet_hp = dict(
     weighting=[5, 50],
     batch = [4],
     k_size = [3, 7, 11],
+    max_channels=[4096]
 )
 
 def calc_n_rows(hp):
