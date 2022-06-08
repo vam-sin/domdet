@@ -56,7 +56,7 @@ class WeightedCrossEntropy:
 
 def select_f1_threshold(precision, recall, thresholds):
     denominator = recall + precision
-    denominator = np.replace(denominator, 0, 1)
+    denominator[denominator==0] = 1
     f1_scores = 2 * recall * precision / denominator
     return thresholds[np.argmax(f1_scores)]
 
@@ -80,17 +80,21 @@ def get_scores(y_true, y_pred):
         'PRAUC':auc(recall, precision)
     }
 
-def evaluate_on_test(model, test_dir = 'features/processed/test/'):
+def evaluate_on_test(model, test_dir = 'features/processed/test/', debug_mode=False):
     test_set = PytorchDataset(dir=test_dir, max_res=480)
     test_generator = torch.utils.data.DataLoader(test_set, batch_size=4, shuffle=True)
     all_y = np.array([])
     all_pred = np.array([])
+    b_counter = 0
     with torch.set_grad_enabled(False):
         for (x, mask), y in test_generator:
+            if debug_mode and b_counter > 1:
+                break
             y_pred = model(x)
             x, y, y_pred, mask = x.numpy(), y.numpy(), y_pred.numpy(), mask.numpy().astype(bool)
             all_y = np.append(all_y, y[mask])
             all_pred = np.append(all_pred, y_pred[mask])
+            b_counter += 1
     scores = get_scores(all_y, all_pred)
     wandb.log(scores)
     for k, v in scores.items():
@@ -98,7 +102,7 @@ def evaluate_on_test(model, test_dir = 'features/processed/test/'):
     return scores
 
 if __name__=="__main__":
-    debug_mode = True
+    debug_mode = False
     wandb.init(entity="cath", project="testing")
     train_dir = 'features/processed/train-val/'
     test_dir = 'features/processed/test/'
@@ -160,6 +164,6 @@ if __name__=="__main__":
             except Exception as exe:
                 print(exe)
         print('\nepochs complete:', e)
-        evaluate_on_test(model, test_dir='features/processed/test/')
+        evaluate_on_test(model, test_dir='features/processed/test/', debug_mode=debug_mode)
 
 
