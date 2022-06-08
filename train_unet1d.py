@@ -88,7 +88,7 @@ def evaluate_on_test(model, test_dir = 'features/processed/test/'):
     with torch.set_grad_enabled(False):
         for (x, mask), y in test_generator:
             y_pred = model(x)
-            x, y, y_pred, mask = x.numpy(), y.numpy(), mask.numpy(), y_pred.numpy()
+            x, y, y_pred, mask = x.numpy(), y.numpy(), y_pred.numpy(), mask.numpy().astype(bool)
             all_y = np.append(all_y, y[mask])
             all_pred = np.append(all_pred, y_pred[mask])
     scores = get_scores(all_y, all_pred)
@@ -104,6 +104,8 @@ if __name__=="__main__":
     test_dir = 'features/processed/test/'
     model_save_dir = 'unet_logs/'
     hp, row_index = get_hyperparameters(path='unet_hp.csv')
+    if debug_mode:
+        hp['max_channels'] = 512
     BATCH_SIZE = hp.get('batch', 4)
     model = UNET(hp)
     epochs = hp.get('epochs', 500)
