@@ -103,7 +103,7 @@ def evaluate_on_test(model, test_dir = 'features/processed/test/', debug_mode=Fa
 
 if __name__=="__main__":
     debug_mode = False
-    wandb.init(entity="cath", project="testing")
+    wandb.init(entity="cath", project="domdet")
     train_dir = 'features/processed/train-val/'
     test_dir = 'features/processed/test/'
     model_save_dir = 'unet_logs/'
