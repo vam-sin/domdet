@@ -108,6 +108,7 @@ if __name__=="__main__":
     test_dir = 'features/processed/test/'
     model_save_dir = 'unet_logs/'
     hp, row_index = get_hyperparameters(path='unet_hp.csv')
+    hp['model'] = 'UNET'
     if debug_mode:
         hp['max_channels'] = 512
     BATCH_SIZE = hp.get('batch', 4)
