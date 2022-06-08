@@ -37,11 +37,11 @@ kalasanty_hyperparams = dict(
 )
 
 unet_hp = dict(
-    lr=[1e-6],
+    lr=[1e-5, 1e-6, 1e-7, 1e-8],
     weighting=[5, 50],
     batch = [4],
     k_size = [3, 7, 11],
-    max_channels=[4096]
+    max_channels=[4096, 2048, 1024]
 )
 
 def calc_n_rows(hp):

@@ -2,10 +2,14 @@ import re
 import sys
 import torch
 import pandas as pd
+import numpy as np
+from sklearn.metrics import roc_auc_score, precision_score, recall_score, accuracy_score, precision_recall_curve, auc, matthews_corrcoef
 
 from UNet_1D import UNET
 from data_generator import PytorchDataset
 import wandb
+
+
 
 def get_hyperparameters(path='unet_hp.csv'):
     # load hyper params from csv select one set of HPs to evaluate
@@ -48,6 +52,50 @@ class WeightedCrossEntropy:
         loss_neg = (1 - y_true) * torch.log(1 - y_pred)
         loss = -1 * (loss_pos + loss_neg)
         return torch.sum(loss)
+
+
+def select_f1_threshold(precision, recall, thresholds):
+    denominator = recall + precision
+    denominator = np.replace(denominator, 0, 1)
+    f1_scores = 2 * recall * precision / denominator
+    return thresholds[np.argmax(f1_scores)]
+
+
+def get_scores(y_true, y_pred):
+    y_true = y_true > 0.5
+    precision, recall, thresholds = precision_recall_curve(y_true, y_pred)
+    classification_threshold = select_f1_threshold(precision, recall, thresholds)
+    binarized_pred = y_pred >= classification_threshold
+
+    if binarized_pred.any():
+        mcc = matthews_corrcoef(y_true, binarized_pred)
+    else:
+        mcc = 0
+    return {
+        'roc_auc': roc_auc_score(y_true, y_pred),
+        'accuracy': accuracy_score(y_true, binarized_pred),
+        'precision': precision_score(y_true, binarized_pred, zero_division=0),
+        'recall': recall_score(y_true, binarized_pred),
+        'MCC': mcc,
+        'PRAUC':auc(recall, precision)
+    }
+
+def evaluate_on_test(model, test_dir = 'features/processed/test/'):
+    test_set = PytorchDataset(dir=test_dir, max_res=480)
+    test_generator = torch.utils.data.DataLoader(test_set, batch_size=4, shuffle=True)
+    all_y = np.array([])
+    all_pred = np.array([])
+    with torch.set_grad_enabled(False):
+        for (x, mask), y in test_generator:
+            y_pred = model(x)
+            x, y, y_pred, mask = x.numpy(), y.numpy(), mask.numpy(), y_pred.numpy()
+            all_y = np.append(all_y, y[mask])
+            all_pred = np.append(all_pred, y_pred[mask])
+    scores = get_scores(all_y, all_pred)
+    wandb.log(scores)
+    for k, v in scores.items():
+        print(k,v)
+    return scores
 
 if __name__=="__main__":
     debug_mode = True
@@ -109,3 +157,7 @@ if __name__=="__main__":
                 b_counter += 1
             except Exception as exe:
                 print(exe)
+        print('\nepochs complete:', e)
+        evaluate_on_test(model, test_dir='features/processed/test/')
+
+

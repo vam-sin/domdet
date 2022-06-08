@@ -78,4 +78,3 @@ class UNET(nn.Module):
 
         outputs = sigmoid(self.outputs(conv9))
         return outputs.squeeze()
-    
