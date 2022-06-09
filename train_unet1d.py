@@ -114,6 +114,7 @@ if __name__=="__main__":
     BATCH_SIZE = hp.get('batch', 4)
     model = UNET(hp)
     epochs = hp.get('epochs', 500)
+    wandb.config.update(hp)
     if hp.get('loss_function', 'cross_entropy') == 'cross_entropy':
         if hp.get('weighting', 1) == 1:
             loss_function = torch.nn.BCELoss()

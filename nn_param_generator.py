@@ -41,7 +41,8 @@ unet_hp = dict(
     weighting=[5, 50],
     batch = [4],
     k_size = [3, 7, 11],
-    max_channels=[4096, 2048, 1024]
+    max_channels=[4096, 2048, 1024],
+    weight_decay=[1e-3, 1e-4, 1e-5, 1e-6]
 )
 
 def calc_n_rows(hp):
