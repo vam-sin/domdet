@@ -155,6 +155,13 @@ class MaskedConvNet(tf.keras.Model):
         }
         return scores
 
+best_guess = dict(
+    filters=64,
+    conv_layers=5,
+    learning_rate=1e-6,
+    k_size=7,
+    dense_layers=2
+)
 
 if __name__=="__main__":
     wandb.init(entity="cath", project="domdet")
@@ -165,7 +172,11 @@ if __name__=="__main__":
 
     for k in ['max_res', 'epochs', 'filters', 'n_features', 'k_size', 'conv_layers', 'dense_layers', 'batch_size']:
         hp[k] = int(hp[k])
-
+    print('MANUALLY OVERWRITING MODEL HYPER PARAMETERS')
+    for k, v in best_guess.items():
+        assert k in hp
+        hp[k] = v
+        print(k, v)
     wandb.config.update(hp)
     wandb.config.model = 'basic convnet'
     input = keras.layers.Input(shape=(hp['max_res'], hp['n_features']))
