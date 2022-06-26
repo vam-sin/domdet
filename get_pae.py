@@ -37,10 +37,18 @@ def get_uniprot_from_pdb(pdbid):
     result_json = r.json()
     return list(result_json[pdbid]['UniProt'].keys())
 
+def match_paes():
+    pass
+
+def match_pae_to_pdb():
+    for row in df.iterrows():
+        chain_seq = row['chain-seq']
+        pdbid = row['chain-desc'].split("|")[-1]
+
 pae_save_dir = 'features/paes/'
 os.makedirs(pae_save_dir, exist_ok=True)
 # pdbid_list = [f.split('.')[0] for f in os.listdir('../PPI_site_predictor/pdb_files/')]
-pdbid_list = get_pdbid_list('ds_final.csv')
+pdbid_list = get_pdbid_list('ds_final_imp.csv')
 completed = [f.split('.')[0] for f in os.listdir(pae_save_dir)]
 for pdbid in pdbid_list:
     if pdbid in completed:
