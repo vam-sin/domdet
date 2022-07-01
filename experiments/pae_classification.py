@@ -6,6 +6,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, roc_auc_score, precision_recall_curve, auc, matthews_corrcoef, f1_score, precision_score, recall_score
 os.chdir('..')
 
+"""
+Copy alphafold features from the cluster:
+rsync -av jwells@pchuckle.cs.ucl.ac.uk:/home/jwells/alphafold/ClusterColabFold/ppi_representation_pickles/ .
+"""
+
 def make_pdb_to_label(df_path):
     df = pd.read_csv(df_path)
     return dict(zip(df['chain-desc'].apply(lambda x: x.split('|')[-1]), df.index.tolist()))
@@ -28,12 +33,45 @@ def get_scores(y_true, y_pred, threshold=0.5):
         'PRAUC':auc(recall, precision)
     }
 
+def make_test_set(dir, test_df_path, max_res):
+    """
+    This function takes the test dataset and also the directory where the PAEs are stored
+    and returns a processed dataset of the PAE features and their corresponding labels
+    :param dir:
+    :param test_df:
+    :return:
+    """
+
+    df = pd.read_csv(test_df_path)
+    total_residues = df['Chain-Sequence'].apply(lambda x: len(x)).sum()
+    x_test = np.zeros([total_residues, max_res+1])
+    y_test = np.zeros(total_residues)
+    res_start = 0
+    for i, row in df.iterrows():
+        fname = row['PDB-ID'] + 'A' + '.npy'
+        try:
+            pae = np.load(os.path.join(dir, fname))
+        except FileNotFoundError:
+            continue
+        assert set(np.array(list(row['chain-domain-annots']))) == {'N', 'D'}
+        one_chain_y = np.where(np.array(list(row['chain-domain-annots']))=='D', 1,0)
+        res_end = res_start + len(one_chain_y)
+        n_col = min(max_res, len(one_chain_y)) +1
+        y_test[res_start:res_end] = one_chain_y
+        x_test[res_start:res_end, :n_col] = pae[:, :n_col]
+        res_start += len(one_chain_y)
+
+    return x_test[:res_end], y_test[:res_end]
+
+
 
 if __name__=="__main__":
     pae_dir = 'features/paes/'
+    test_pae_dir = 'features/test_pae/'
     pdb_to_label_path = make_pdb_to_label('ds_final_imp.csv')
     max_res = 350
     x,y = make_initial_x_y(max_res=max_res)
+    x_test, y_test = make_test_set(test_pae_dir, 'casp_test_final.csv', max_res)
     res_start = 0
     for fname in os.listdir(pae_dir):
         try:
@@ -53,7 +91,7 @@ if __name__=="__main__":
         except:
             pass
     y = y-1
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.33, random_state = 13)
+    x_train, x_val, y_train, y_val = train_test_split(x, y, test_size = 0.33, random_state = 13)
     model  = XGBClassifier(
         n_estimators=500,
         learning_rate=0.01,
@@ -66,10 +104,17 @@ if __name__=="__main__":
         scale_pos_weight=0.05,
         njobs=-1,
     )
-    model.fit(x_train, y_train, eval_set=[(x_test, y_test)], early_stopping_rounds=6)
-    preds = model.predict_proba(x_test)[:,1]
-    scores = get_scores(y_test, preds, threshold=0.5)
+    model.fit(x_train, y_train, eval_set=[(x_val, y_val)], early_stopping_rounds=6)
+    preds = model.predict_proba(x_val)[:,1]
+    scores = get_scores(y_val, preds, threshold=0.5)
+    print('---validation scores---')
     for k,v in scores.items():
         print(k,v)
     bp=True
+    print('---test scores---')
+    test_preds = model.predict_proba(x_test)[:,1]
+    scores = get_scores(y_test, test_preds, threshold=0.5)
+    for k,v in scores.items():
+        print(k,v)
+
 
