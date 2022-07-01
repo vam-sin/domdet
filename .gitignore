@@ -6,5 +6,4 @@ wandb/
 conv_logs/
 *.csv
 *.png
-paes2/
 *.npy
