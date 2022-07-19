@@ -1,4 +1,4 @@
-from get_pae import create_mapping_dict, get_alignment
+from get_uniprot_pae import create_mapping_dict, get_alignment
 
 def test_create_mapping_dict1():
     s1 = 'ABCDEFGH'

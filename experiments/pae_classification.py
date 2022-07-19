@@ -52,7 +52,7 @@ def make_test_set(dir, test_df_path, max_res):
 
     df = pd.read_csv(test_df_path)
     total_residues = df['Chain-Sequence'].apply(lambda x: len(x)).sum()
-    x_test = np.zeros([total_residues, max_res+1])
+    x_test = np.zeros([total_residues, max_res*2 + 1])
     y_test = np.zeros(total_residues)
     res_start = 0
     for i, row in df.iterrows():
@@ -67,6 +67,14 @@ def make_test_set(dir, test_df_path, max_res):
         n_col = min(max_res, len(one_chain_y)) +1
         y_test[res_start:res_end] = one_chain_y
         x_test[res_start:res_end, :n_col] = pae[:, :n_col]
+        # extend the pae by using the transpose
+        col_res_end = max_res + n_col
+        transpose_n_col = min(max_res, len(one_chain_y))
+        try:
+            x_test[res_start:res_end, max_res+1:col_res_end] = pae[:,1:].T[:,:transpose_n_col]
+        except:
+            bp=True
+        check_reshape(pae, x_test[res_start:res_end], max_res)
         res_start += len(one_chain_y)
 
     return x_test[:res_end], y_test[:res_end]
@@ -77,14 +85,27 @@ def make_alphafold_features(pdbid, alpha_dir='alpha_dom_pickles/'):
         bp=True
     pass
 
+def check_reshape(pae, x, max_res):
+    try:
+        n_res = min(len(pae), max_res)
+        for i in np.random.choice(range(n_res), 50):
+            for j in np.random.choice(range(n_res), 50):
+                assert x[i,j] == pae[i,j]
+                assert x[i, j+351] == pae[j, i+1]
+                assert x[j, i+351] == pae[i, j+1]
+                print('pass')
+    except:
+        bp=True
+
+
 def make_train_set(pae_dir, max_res):
-    x, y = make_initial_x_y(max_res=max_res)
+    x, y = make_initial_x_y(max_res=max_res*2)
     res_start = 0
     for fname in os.listdir(pae_dir):
         try:
             pae = np.load(os.path.join(pae_dir, fname))
-            n_res = min(max_res, len(pae))
-            res_end = res_start + n_res
+            n_res = len(pae)
+            res_end = res_start + len(pae)
             if res_end > len(x):# if we reach the end of the max dataset size then trim to last completed chain
                 x = x[:res_start, :]
                 y = y[:res_start]
@@ -97,12 +118,23 @@ def make_train_set(pae_dir, max_res):
             try:
                 assert 0 not in set(label)
             except:
-                print(pdbid, 'non matching sequence length')
+                print(pdbid, 'zero in label after truncate')
                 bp=True
                 continue
             y[res_start:res_end] = label
-            x[res_start:res_end, :n_res + 1] = pae[:n_res,:max_res+1]
+            x[res_start:res_end, :len(pae) + 1] = pae[:,:max_res+1]
+            n_col = min(max_res, len(label)) + 1
+            # extend the pae by using the transpose
+            col_res_end = max_res + n_col
+            transpose_n_col = min(max_res, len(label))
+            try:
+                x[res_start:res_end, max_res+1:col_res_end] = pae[:, 1:].T[:, :transpose_n_col]
+            except:
+                bp = True
+
+            check_reshape(pae, x[res_start:res_end], max_res)
             res_start = res_end
+
         except:
             pass
     non_zero_indices = np.where(x.sum(axis=1)!=0)[0]

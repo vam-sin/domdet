@@ -3,7 +3,7 @@ import numpy as np
 import pickle
 
 if __name__=="__main__":
-    alphafold_dir = c
+    alphafold_dir = "features/alpha_dom_pickles"
     pae_output_dir = 'features/train_colabfold_paes/'
     os.makedirs(pae_output_dir, exist_ok=True)
     for f in os.listdir(alphafold_dir):
