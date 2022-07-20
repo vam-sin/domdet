@@ -1,4 +1,5 @@
-import os 
+import numpy as np
+import os
 import random
 
 train_val_keys = os.listdir('features/processed/train-val/')
@@ -49,7 +50,7 @@ def get_datapoint(set_name, key, mask_bin):
     return X, y
 
 
-def generator_from_file(key_lst, batch_size, mask_bin):
+def generator_from_file(key_lst, batch_size, mask_bin=False):
   random.shuffle(key_lst)
   i = 0
 
@@ -85,6 +86,7 @@ def generator_from_file(key_lst, batch_size, mask_bin):
     yield X_batch, y_batch
 
 bs = 1
+mask_bin = False
 train_gen = generator_from_file(train_keys, bs, mask_bin)
 val_gen = generator_from_file(val_keys, bs, mask_bin)
 test_gen = generator_from_file(test_keys, bs, mask_bin)

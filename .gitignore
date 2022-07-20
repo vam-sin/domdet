@@ -3,3 +3,8 @@ features/
 data/
 *.npx
 __pycache__/
+wandb/
+conv_logs/
+*.csv
+*.png
+*.npy
